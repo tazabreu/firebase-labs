@@ -1,0 +1,10 @@
+{
+    "parameters": {
+      "health_sample_message": {
+        "defaultValue": {
+          "value": "all-good-local"
+        },
+        "description": "Message returned by the health endpoint"
+      }
+    }
+  }

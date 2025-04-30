@@ -1,0 +1,36 @@
+{
+    "name": "@firebase-labs/health",
+    "main": "dist/index.js",
+    "type": "module",
+    "engines": {
+        "node": "20"
+    },
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "build:watch": "tsc -p tsconfig.json --watch ",
+        "serve": "npm run build && dotenv -e ./.env.local -- firebase emulators:start --only functions",
+        "serve:watch": "concurrently \"pnpm run build:watch\" \"dotenv -e ./.env.local -- firebase emulators:start --only functions\"",
+        "deploy": "firebase deploy --only functions",
+        "logs": "firebase functions:log",
+        "lint": "eslint . --ext .ts,.js",
+        "test": "jest"
+    },
+    "dependencies": {
+        "dotenv-cli": "^8.0.0",
+        "express": "5.1.0",
+        "firebase-admin": "13.3.0",
+        "firebase-functions": "^6.3.2"
+    },
+    "devDependencies": {
+        "@eslint/js": "^8.56.0",
+        "@types/express": "5.0.1",
+        "@types/jest": "29.5.14",
+        "@typescript-eslint/eslint-plugin": "^6.21.0",
+        "@typescript-eslint/parser": "^6.21.0",
+        "concurrently": "^9.1.2",
+        "dotenv": "^16.5.0",
+        "eslint": "^8.56.0",
+        "jest": "29.7.0",
+        "typescript": "^5.4.0"
+    }
+}

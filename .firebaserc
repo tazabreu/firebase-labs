@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "firebase-labs-nonprod": "fir-labs-nonprod",
+    "firebase-labs-prod": "fir-labs-prod"
+  },
+  "targets": {},
+  "etags": {}
+}
