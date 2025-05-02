@@ -10,6 +10,8 @@ dist/
 .env.development
 .env.test
 .env.production
+.env.integration-test.*
+!.env.integration-test.template
 
 # Logs
 *.log

@@ -4,6 +4,7 @@
  */
 import logger from '../utils/logger';
 import * as catFactsService from './cat-facts.service';
+import { getFeatureFlags, FeatureFlags } from './remote-config.service';
 
 /**
  * Health status constants
@@ -29,6 +30,7 @@ export interface HealthCheckResult {
     }
   };
   environment: string;
+  'feature-flags': FeatureFlags;
 }
 
 /**
@@ -40,8 +42,11 @@ export async function performHealthCheck(): Promise<HealthCheckResult> {
   logger.info('Performing health check');
   const startTime = Date.now();
   
-  // Perform Cat Facts API health check
-  const catFactsHealth = await catFactsService.checkHealth();
+  // Fetch data in parallel
+  const [catFactsHealth, featureFlags] = await Promise.all([
+    catFactsService.checkHealth(),
+    getFeatureFlags()
+  ]);
   
   // Determine overall status based on downstream services
   // For this implementation, we're making the service status depend entirely on Cat Facts API
@@ -58,7 +63,8 @@ export async function performHealthCheck(): Promise<HealthCheckResult> {
         url: catFactsHealth.data?.url || `${catFactsService.CAT_FACTS_API.baseUrl}${catFactsService.CAT_FACTS_API.endpoints.fact}`
       }
     },
-    environment: process.env.NODE_ENV || 'local'
+    environment: process.env.NODE_ENV || 'local',
+    'feature-flags': featureFlags
   };
   
   // Add sample fact if available

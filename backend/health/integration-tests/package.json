@@ -7,7 +7,10 @@
     "test": "jest",
     "test:watch": "jest --watchAll",
     "monitor": "ts-node src/monitor.ts",
-    "test:local": "INTEGRATION_TEST_TARGET_API=http://127.0.0.1:5001/fir-labs-nonprod/us-central1 INTEGRATION_TEST_TARGET_HEALTH_ENDPOINT=/health jest"
+    "test:local": "cross-env ENV=local jest",
+    "test:nonprod": "cross-env ENV=nonprod jest",
+    "monitor:local": "cross-env ENV=local ts-node src/monitor.ts",
+    "monitor:nonprod": "cross-env ENV=nonprod ts-node src/monitor.ts"
   },
   "dependencies": {
     "dotenv": "^16.5.0",
@@ -17,6 +20,7 @@
     "@types/jest": "^29.5.14",
     "@types/node": "^20.0.0",
     "@types/node-fetch": "^2.6.12",
+    "cross-env": "^7.0.3",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",

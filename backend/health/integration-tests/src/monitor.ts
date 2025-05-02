@@ -1,16 +1,63 @@
 /**
  * Monitor script that runs health tests every minute
+ * Supports multiple environments via CLI selection
  */
 // Using require for compatibility with direct node execution
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-require('dotenv').config();
+const path = require('path');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { execSync } = require('child_process');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const path = require('path');
+
+import readline from 'readline';
+import { 
+  availableEnvironments, 
+  defaultEnvironment, 
+  loadEnvironment, 
+  getConfig,
+  getCurrentEnvironment
+} from './config';
+
+/**
+ * Select environment via CLI prompt
+ */
+function selectEnvironment(): Promise<string> {
+  // If environment is passed via ENV variable, use that
+  const envFromArgs = process.env.ENV;
+  if (envFromArgs && availableEnvironments.includes(envFromArgs)) {
+    console.log(`Using environment from ENV variable: ${envFromArgs}`);
+    loadEnvironment(envFromArgs);
+    return Promise.resolve(envFromArgs);
+  }
+
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    console.log('\n🌐 SELECT ENVIRONMENT:');
+    console.log('---------------------');
+    availableEnvironments.forEach((env, index) => {
+      console.log(`${index + 1}. ${env}`);
+    });
+    
+    rl.question('\nEnter environment number [default: 1]: ', (answer) => {
+      const envIndex = parseInt(answer) - 1;
+      // Use selected environment or default to first one if invalid input
+      const selectedEnv = availableEnvironments[envIndex] || availableEnvironments[0];
+      rl.close();
+      console.log(`Selected environment: ${selectedEnv}`);
+      // Ensure we load the environment variables after selection
+      loadEnvironment(selectedEnv);
+      resolve(selectedEnv);
+    });
+  });
+}
 
 // Get monitoring interval from env or default to 60 seconds
-const monitorInterval = parseInt(process.env.MONITOR_INTERVAL || '60000', 10);
+const getMonitorInterval = (): number => {
+  return parseInt(process.env.MONITOR_INTERVAL || '60000', 10);
+};
 
 // Clear terminal
 const clearTerminal = (): void => {
@@ -23,16 +70,21 @@ const timestamp = (): string => {
 };
 
 // Run tests once
-const runTests = (): void => {
+const runTests = (env: string): void => {
+  const config = getConfig();
+  const monitorInterval = getMonitorInterval();
+  
   clearTerminal();
   // eslint-disable-next-line no-console
-  console.log(`\n[${timestamp()}] Running health endpoint tests...`);
+  console.log(`\n[${timestamp()}] Running health endpoint tests (${env.toUpperCase()})...`);
   // eslint-disable-next-line no-console
-  console.log(`Target: ${process.env.INTEGRATION_TEST_TARGET_API}${process.env.INTEGRATION_TEST_TARGET_HEALTH_ENDPOINT}`);
+  console.log(`Target: ${config.baseUrl}`);
+  // eslint-disable-next-line no-console
+  console.log(`Timeout: ${config.timeout}ms`);
   
   try {
     // Run jest directly with the test file
-    execSync('npx jest src/health.test.ts --colors', { 
+    execSync(`cross-env ENV=${env} npx jest src/health.test.ts --colors`, { 
       stdio: 'inherit',
       cwd: path.join(__dirname, '..')
     });
@@ -47,16 +99,42 @@ const runTests = (): void => {
   console.log(`\nNext run in ${monitorInterval/1000} seconds. Press Ctrl+C to exit.\n`);
 };
 
-// Print banner
-// eslint-disable-next-line no-console
-console.log('\n🔍 HEALTH ENDPOINT MONITORING');
-// eslint-disable-next-line no-console
-console.log('============================');
-// eslint-disable-next-line no-console
-console.log(`Tests will run every ${monitorInterval/1000} seconds. Press Ctrl+C to exit.\n`);
+/**
+ * Main function to initialize and run tests
+ */
+async function main(): Promise<void> {
+  try {
+    const env = await selectEnvironment();
+    const monitorInterval = getMonitorInterval();
+    
+    // Double-check that environment is properly loaded
+    if (!process.env.INTEGRATION_TEST_TARGET_API) {
+      throw new Error(`Environment variables not properly loaded for ${env}. Check your .env.integration-test.${env} file.`);
+    }
+    
+    // Print banner
+    // eslint-disable-next-line no-console
+    console.log(`\n🔍 HEALTH ENDPOINT MONITORING (${env.toUpperCase()})`);
+    // eslint-disable-next-line no-console
+    console.log('============================');
+    // eslint-disable-next-line no-console
+    console.log(`Target API: ${process.env.INTEGRATION_TEST_TARGET_API}${process.env.INTEGRATION_TEST_TARGET_HEALTH_ENDPOINT}`);
+    // eslint-disable-next-line no-console
+    console.log(`Tests will run every ${monitorInterval/1000} seconds. Press Ctrl+C to exit.\n`);
 
-// Run immediately
-runTests();
+    // Run immediately
+    runTests(env);
 
-// Then run at specified interval
-setInterval(runTests, monitorInterval); 
+    // Then run at specified interval
+    setInterval(() => runTests(env), monitorInterval);
+  } catch (error) {
+    console.error('Error in monitor:', error);
+    process.exit(1);
+  }
+}
+
+// Start the monitor
+main().catch(error => {
+  console.error('Error starting monitor:', error);
+  process.exit(1);
+}); 

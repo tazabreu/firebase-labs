@@ -1,6 +1,6 @@
 # Health Endpoint Integration Tests
 
-Simple integration tests to verify the health endpoint functionality.
+Simple integration tests to verify the health endpoint functionality across multiple environments.
 
 ## Setup
 
@@ -12,24 +12,26 @@ npm install
 
 2. Configure environment variables:
 
-Create a `.env` file in the root of the integration-tests directory with the following variables:
-
-```
-# Target API and endpoint configuration
-INTEGRATION_TEST_TARGET_API=http://127.0.0.1:5001/fir-labs-nonprod/us-central1
-INTEGRATION_TEST_TARGET_HEALTH_ENDPOINT=/health
-
-# Test configuration
-TEST_TIMEOUT=5000
-MONITOR_INTERVAL=60000
-```
+Environment-specific configuration files are provided:
+- `.env.integration-test.local` - For testing against local emulator
+- `.env.integration-test.nonprod` - For testing against non-production environment
 
 ## Running Tests
 
-### Run tests once:
+### Run tests against default environment (local):
 
 ```bash
 npm test
+```
+
+### Run tests against specific environments:
+
+```bash
+# Test against local/emulator
+npm run test:local
+
+# Test against nonprod environment
+npm run test:nonprod
 ```
 
 ### Run tests in watch mode:
@@ -38,10 +40,24 @@ npm test
 npm run test:watch
 ```
 
-### Run continuous monitoring (tests every minute):
+### Run continuous monitoring:
+
+#### Interactive environment selection:
 
 ```bash
 npm run monitor
+```
+
+The monitor will prompt you to select an environment.
+
+#### Direct environment selection:
+
+```bash
+# Monitor local/emulator environment
+npm run monitor:local
+
+# Monitor nonprod environment
+npm run monitor:nonprod
 ```
 
 The monitor script is written in TypeScript and requires ts-node to run. It will clear the console before each test run and display the results with timestamps.
@@ -50,22 +66,15 @@ The monitor script is written in TypeScript and requires ts-node to run. It will
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| INTEGRATION_TEST_TARGET_API | Base API URL | http://127.0.0.1:5001/fir-labs-nonprod/us-central1 |
-| INTEGRATION_TEST_TARGET_HEALTH_ENDPOINT | Health endpoint path | /health |
-| TEST_TIMEOUT | Test timeout in milliseconds | 5000 |
+| INTEGRATION_TEST_TARGET_API | Base API URL | Environment-specific |
+| INTEGRATION_TEST_TARGET_HEALTH_ENDPOINT | Health endpoint path | Environment-specific |
+| TEST_TIMEOUT | Test timeout in milliseconds | Environment-specific |
 | MONITOR_INTERVAL | Monitor interval in milliseconds | 60000 |
-
-## Test Environment
-
-By default, tests run against the local Firebase emulator. To change the environment:
-
-```bash
-TEST_ENV=your-env npm test
-```
 
 ## Tests Included
 
 1. Verifies the health endpoint returns a 200 status code
 2. Verifies the response body contains "UP" status and downstream verification
-3. Verifies the response includes a cat fact
-4. Verifies the Cat Facts API response time is under 3 seconds 
+3. Verifies the feature-flags object with health_sample_message is present
+4. Verifies the response includes a cat fact
+5. Verifies the Cat Facts API response time is under 3 seconds 
