@@ -1,4 +1,3 @@
-
 ## ESLint Best Practices
 
 For a TypeScript project using ESM modules (as indicated by "type": "module" in package.json):
@@ -31,3 +30,12 @@ The ESLint configuration should be compatible with the existing TypeScript setup
 - Health aggregation with status rules
 - Async health check execution
 - Dependency health propagation
+
+## Version Control Operations
+
+### Git Operations Safety Pattern
+- NEVER commit, push, or perform any git operations without explicit user approval
+- Always ask for confirmation before proceeding with any git-related actions
+- Wait for explicit approval even when the user appears to request such operations
+- Present recommended git commands for review before execution
+- This applies to all git commands: add, commit, push, pull, branch, merge, rebase, etc.
