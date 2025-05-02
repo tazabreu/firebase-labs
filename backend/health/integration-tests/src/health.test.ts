@@ -8,12 +8,15 @@ import { describe, beforeAll, test, expect } from '@jest/globals';
 const config = getConfig();
 
 // Log the URL being tested for clarity
+// eslint-disable-next-line no-console
 console.log(`Testing health endpoint at: ${config.baseUrl}`);
 
 describe('Health Endpoint Integration Tests', () => {
   
   beforeAll(() => {
+    // eslint-disable-next-line no-console
     console.log(`Running tests against: ${config.baseUrl}`);
+    // eslint-disable-next-line no-console
     console.log('Timeout set to:', config.timeout, 'ms');
   });
   

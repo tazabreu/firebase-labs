@@ -6,7 +6,7 @@ import express, { Request, Response } from 'express';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { onRequest } from 'firebase-functions/v2/https';
 import logger from './utils/logger';
-import { performHealthCheck, HealthStatus } from './services/health';
+import { performHealthCheck, HealthStatus } from './services/health.service';
 
 // Initialize Firebase Admin
 initializeApp({

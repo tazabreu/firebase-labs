@@ -5,7 +5,7 @@
 import fetch from 'node-fetch';
 import { Response } from 'node-fetch';
 import logger from '../utils/logger';
-import { HealthStatus } from './health';
+import { HealthStatus } from './health.service';
 
 /**
  * API Configuration
@@ -97,14 +97,14 @@ export async function checkHealth(): Promise<CatFactsHealthResult> {
         sampleFact: data.fact
       }
     };
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     const responseTime = Date.now() - startTime;
     logger.error({ error }, 'Cat Facts API health check failed');
     
     return {
       status: HealthStatus.DOWN,
       responseTime,
-      error: error.message || 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
 } 

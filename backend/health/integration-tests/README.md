@@ -44,6 +44,8 @@ npm run test:watch
 npm run monitor
 ```
 
+The monitor script is written in TypeScript and requires ts-node to run. It will clear the console before each test run and display the results with timestamps.
+
 ## Environment Variables
 
 | Variable | Description | Default |

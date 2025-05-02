@@ -3,7 +3,7 @@
  * Provides comprehensive health checks for the application.
  */
 import logger from '../utils/logger';
-import * as catFactsService from './catFacts';
+import * as catFactsService from './cat-facts.service';
 
 /**
  * Health status constants

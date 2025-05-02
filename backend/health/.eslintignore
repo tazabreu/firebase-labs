@@ -4,6 +4,7 @@ build/
 
 # Dependencies
 node_modules/
+.pnpm-store/
 
 # Logs
 *.log
@@ -12,4 +13,13 @@ node_modules/
 .env*
 
 # Testing
-coverage/ 
+coverage/
+
+# Configuration files
+jest.config.js
+
+# JavaScript files to ignore
+src/utils/logger.js
+
+# Original Configurations (should be linted separately)
+integration-tests/jest.config.js 
