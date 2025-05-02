@@ -1,40 +1,52 @@
-// packages/backend/health/src/index.ts
-import express from 'express';
+/**
+ * Health Service
+ * Firebase Function for providing application health status.
+ */
+import express, { Request, Response } from 'express';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
-import { getRemoteConfig } from 'firebase-admin/remote-config';
-import { onRequest } from 'firebase-functions/v2/https'; // Import v2 HTTPS handler
+import { onRequest } from 'firebase-functions/v2/https';
+import logger from './utils/logger';
+import { performHealthCheck, HealthStatus } from './services/health';
 
+// Initialize Firebase Admin
 initializeApp({
   credential: applicationDefault()
 });
- 
-const rc = getRemoteConfig();            // Remote Config handle
+
+logger.info('Health service initializing');
+
+// Create Express app
 const app = express();
 
 /**
- * GET /
- * Returns:
- * {
- *   env: "nonprod" | "prod" | "local",
- *   message: "<remote-config string or fallback>"
- * }
+ * GET / - Health Endpoint
+ * Returns health status of the service and its dependencies
  */
-app.get('/', async (_req, res) => {
+app.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    console.log(`The env var from .env.local is: `)
-    console.log(JSON.stringify(process.env.TESTING_DOTENV))
-    const template = await rc.getTemplate();    // fetch active template
-    const defaultValue = template.parameters?.health_sample_message?.defaultValue;
-    const msg =
-      defaultValue && 'value' in defaultValue ? defaultValue.value : 'all-good';
-    res.json({
-      env: process.env.FIREBASE_ENV ?? 'local',
-      message: msg,
+    logger.info('Health check requested', {
+      ip: req.ip,
+      userAgent: req.get('user-agent')
     });
-  } catch (err) {                               // graceful degradation
-    console.error('RC error', err);             // eslint-disable-line no-console
-    res.status(500).json({ error: 'remote-config-failed' });
+    
+    // Perform comprehensive health check
+    const healthResult = await performHealthCheck();
+    
+    // Set status code based on health status
+    const statusCode = healthResult.status === HealthStatus.UP ? 200 : 503;
+    
+    res.status(statusCode).json(healthResult);
+  } catch (err) {
+    logger.error({ err }, 'Health check failed');
+    res.status(500).json({ 
+      status: HealthStatus.DOWN,
+      error: 'Internal error during health check',
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
-export const health = onRequest(app);                        // Firebase Functions v2 entry
+// Export the Express app wrapped with Firebase Functions v2 handler
+export const health = onRequest(app);
+
+logger.info('Health service initialized and ready'); 

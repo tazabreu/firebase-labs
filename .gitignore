@@ -1,6 +1,7 @@
 .specstory
 .env.local
 /Users/tazabreu/@Projects/scratchpad/firebase-labs/firebase-labs/backend/health/fir-labs-nonprod-firebase-adminsdk-fbsvc-d48917b750.json
+dist/
 
 # Logs
 logs
