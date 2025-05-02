@@ -1,3 +1,4 @@
+.specstory
 .env.local
 /Users/tazabreu/@Projects/scratchpad/firebase-labs/firebase-labs/backend/health/fir-labs-nonprod-firebase-adminsdk-fbsvc-d48917b750.json
 
@@ -70,3 +71,5 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+# SpecStory explanation file
+.specstory/.what-is-this.md
