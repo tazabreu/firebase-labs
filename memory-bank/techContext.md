@@ -49,6 +49,42 @@ All necessary packages are already installed in package.json:
 - Create a unified health status aggregation mechanism
 - Follow industry standards for health status representation
 
+## Multi-Environment Testing Architecture
+
+### 1. Environment Configuration
+- Use .env files for different environments (local, nonprod, prod)
+- Implement dotenv for loading environment-specific variables
+- Create a shared configuration module for consistent access
+
+### 2. Testing Framework
+- Jest for test execution
+- Environment-specific test expectations
+- Support for watchable tests with environment selection
+
+### 3. Monitoring Tool
+- Interactive CLI for environment selection
+- Real-time test execution and reporting
+- Configurable monitoring intervals
+
+## Feature Flags Implementation
+
+### 1. Remote Config Integration
+- Use Firebase Remote Config for feature flag management
+- Implement a service to fetch and cache flag values
+- Include default values for offline/fallback operation
+
+### 2. Feature Flag Categories
+- Application features (enabled/disabled)
+- Configuration parameters
+- User experience variations
+- Sample messages and content
+
+### 3. Health Endpoint Integration
+- Include feature flags section in health response
+- health_sample_message flag for demonstration
+- Feature flags accessible at the same level as downstream services
+- Clear documentation for consumers of the API
+
 ## Implementation Details
 
 ### 1. Logging Solution

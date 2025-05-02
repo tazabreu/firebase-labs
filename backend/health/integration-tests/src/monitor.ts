@@ -11,10 +11,10 @@ const { execSync } = require('child_process');
 import readline from 'readline';
 import { 
   availableEnvironments, 
-  defaultEnvironment, 
+  
   loadEnvironment, 
   getConfig,
-  getCurrentEnvironment
+
 } from './config';
 
 /**
@@ -24,6 +24,7 @@ function selectEnvironment(): Promise<string> {
   // If environment is passed via ENV variable, use that
   const envFromArgs = process.env.ENV;
   if (envFromArgs && availableEnvironments.includes(envFromArgs)) {
+    // eslint-disable-next-line no-console
     console.log(`Using environment from ENV variable: ${envFromArgs}`);
     loadEnvironment(envFromArgs);
     return Promise.resolve(envFromArgs);
@@ -35,9 +36,12 @@ function selectEnvironment(): Promise<string> {
       output: process.stdout
     });
 
+    // eslint-disable-next-line no-console
     console.log('\n🌐 SELECT ENVIRONMENT:');
-    console.log('---------------------');
+    // eslint-disable-next-line no-console
+      console.log('---------------------');
     availableEnvironments.forEach((env, index) => {
+      // eslint-disable-next-line no-console
       console.log(`${index + 1}. ${env}`);
     });
     
@@ -46,6 +50,7 @@ function selectEnvironment(): Promise<string> {
       // Use selected environment or default to first one if invalid input
       const selectedEnv = availableEnvironments[envIndex] || availableEnvironments[0];
       rl.close();
+      // eslint-disable-next-line no-console
       console.log(`Selected environment: ${selectedEnv}`);
       // Ensure we load the environment variables after selection
       loadEnvironment(selectedEnv);
@@ -128,6 +133,7 @@ async function main(): Promise<void> {
     // Then run at specified interval
     setInterval(() => runTests(env), monitorInterval);
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error in monitor:', error);
     process.exit(1);
   }
@@ -135,6 +141,7 @@ async function main(): Promise<void> {
 
 // Start the monitor
 main().catch(error => {
+    // eslint-disable-next-line no-console
   console.error('Error starting monitor:', error);
   process.exit(1);
 }); 
