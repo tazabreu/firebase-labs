@@ -1,16 +1,14 @@
 # Active Context
 
 ## Current Focus (next 1–2 iterations)
-- Remote Config: add `health_env_label` to surface environment in responses; validate local vs nonprod via integration tests.
-- Auth Hardening for `health` HTTPS function:
-  - Evaluate Firebase Auth ID token verification + admin email allowlist (via Remote Config)
-  - Evaluate Firebase App Check for abuse protection from the open web
+- Enforce IAM perimeter for `health` function (private invoker) + CI post-deploy bindings
+- RC-driven optional in-code auth guard stays as defense-in-depth
 
 ## Near-Term Follow-ups
-- Gate enforcement behind new RC flag `require_auth` (default false), then enable in nonprod for validation.
-- Optional: thin admin UI/client to fetch ID token and invoke function.
+- Configure GitHub OIDC (WIF) and secrets in repo/org to enable IAM steps
+- Update nonprod test docs: use identity token when invoking protected endpoint
 
 ## Dependencies
-- Firebase Admin SDK (verifyIdToken; optional App Check verification)
-- Remote Config template changes per project
-- Integration tests updates for RC and (later) auth behaviors
+- Google GitHub Actions (auth, setup-gcloud)
+- GCP SA with roles: cloudfunctions.admin, iam.securityAdmin
+- Secrets: ADMIN_USER_EMAIL, INVOKER_SA_EMAIL_*, WIF provider, SA email

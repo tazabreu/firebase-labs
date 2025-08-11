@@ -112,3 +112,8 @@ All tasks completed successfully with code organized into modular, maintainable 
 ## 2025-08-10
 - Scoped next iteration: add RC keys (`health_env_label`, `require_auth`) and plan auth hardening (ID token allowlist/App Check)
 - Pruned memory context to focus on RC and auth for `health` function
+
+## 2025-08-10 (cont.)
+- Implemented IAM perimeter: function invoker private; CI enforces bindings via gcloud post-deploy
+- Workflows deploy functions + remoteconfig; WIF auth configured placeholders
+- Integration tests accept optional Authorization header to call protected endpoints
