@@ -14,6 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event.inputs.confirm == 'DEPLOY'
 
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -44,8 +48,46 @@ jobs:
       - name: Set up Firebase CLI
         run: npm install -g firebase-tools
       
-      - name: Deploy to Firebase NonProd
-        run: firebase deploy --project fir-labs-nonprod --force
+      - name: Deploy Functions and Remote Config to NonProd
+        run: firebase deploy --project fir-labs-nonprod --only functions,remoteconfig --force
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN_NONPROD }}
           NODE_ENV: nonprod
+
+      - name: Authenticate to Google Cloud (WIF)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER_NONPROD }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_NONPROD }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: '>= 474.0.0'
+
+      - name: Enforce IAM invoker (remove public, add admins)
+        env:
+          GCP_PROJECT: fir-labs-nonprod
+          FUNCTION_NAME: health
+          REGION: us-central1
+          ADMIN_USER_EMAIL: ${{ secrets.ADMIN_USER_EMAIL }}
+          INVOKER_SA_EMAIL: ${{ secrets.INVOKER_SA_EMAIL_NONPROD }}
+        run: |
+          set -euo pipefail
+          # Remove public access if present (ignore errors)
+          gcloud functions remove-iam-policy-binding "$FUNCTION_NAME" \
+            --region="$REGION" --gen2 \
+            --member="allUsers" \
+            --role="roles/cloudfunctions.invoker" || true
+          
+          # Add admin user invoker
+          gcloud functions add-iam-policy-binding "$FUNCTION_NAME" \
+            --region="$REGION" --gen2 \
+            --member="user:$ADMIN_USER_EMAIL" \
+            --role="roles/cloudfunctions.invoker"
+          
+          # Add service account invoker for automation/other services
+          gcloud functions add-iam-policy-binding "$FUNCTION_NAME" \
+            --region="$REGION" --gen2 \
+            --member="serviceAccount:$INVOKER_SA_EMAIL" \
+            --role="roles/cloudfunctions.invoker"

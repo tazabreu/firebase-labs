@@ -8,9 +8,17 @@ import { describe, beforeAll, test, expect } from '@jest/globals';
 const config = getConfig();
 const currentEnv = getCurrentEnvironment();
 
+// Optional auth token support for protected environments
+const authToken = process.env.AUTH_ID_TOKEN || '';
+
 // Log the URL being tested for clarity
 // eslint-disable-next-line no-console
 console.log(`Testing health endpoint (${currentEnv.toUpperCase()}) at: ${config.baseUrl}`);
+
+function authHeaders(): Record<string, string> {
+  if (!authToken) return {};
+  return { Authorization: `Bearer ${authToken}` };
+}
 
 describe(`Health Endpoint Integration Tests (${currentEnv.toUpperCase()})`, () => {
   
@@ -21,11 +29,15 @@ describe(`Health Endpoint Integration Tests (${currentEnv.toUpperCase()})`, () =
     console.log('Timeout set to:', config.timeout, 'ms');
     // eslint-disable-next-line no-console
     console.log('Environment:', currentEnv);
+    if (authToken) {
+      // eslint-disable-next-line no-console
+      console.log('Using Authorization header');
+    }
   });
   
   test('should return 200 status code when service is healthy', async () => {
     // Act
-    const response = await fetch(config.baseUrl);
+    const response = await fetch(config.baseUrl, { headers: authHeaders() });
     
     // Assert
     expect(response.status).toBe(200);
@@ -33,7 +45,7 @@ describe(`Health Endpoint Integration Tests (${currentEnv.toUpperCase()})`, () =
 
   test('should return UP status and downstream verification in response body', async () => {
     // Act
-    const response = await fetch(config.baseUrl);
+    const response = await fetch(config.baseUrl, { headers: authHeaders() });
     
     // Handle failed response
     if (!response.ok) {
@@ -51,7 +63,7 @@ describe(`Health Endpoint Integration Tests (${currentEnv.toUpperCase()})`, () =
 
   test('should include feature-flags with health_sample_message', async () => {
     // Act
-    const response = await fetch(config.baseUrl);
+    const response = await fetch(config.baseUrl, { headers: authHeaders() });
     
     // Handle failed response
     if (!response.ok) {
@@ -70,7 +82,7 @@ describe(`Health Endpoint Integration Tests (${currentEnv.toUpperCase()})`, () =
 
   test('should return a cat fact in the response', async () => {
     // Act
-    const response = await fetch(config.baseUrl);
+    const response = await fetch(config.baseUrl, { headers: authHeaders() });
     
     // Handle failed response 
     if (!response.ok) {
@@ -87,7 +99,7 @@ describe(`Health Endpoint Integration Tests (${currentEnv.toUpperCase()})`, () =
 
   test('should fetch from CatFacts API in less than 3 seconds', async () => {
     // Act
-    const response = await fetch(config.baseUrl);
+    const response = await fetch(config.baseUrl, { headers: authHeaders() });
     
     // Handle failed response
     if (!response.ok) {

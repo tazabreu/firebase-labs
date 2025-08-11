@@ -5,6 +5,24 @@
           "value": "all-good-local"
         },
         "description": "Message returned by the health endpoint"
+      },
+      "health_env_label": {
+        "defaultValue": {
+          "value": "local"
+        },
+        "description": "Label indicating the current environment (e.g., local, nonprod, prod)"
+      },
+      "require_auth": {
+        "defaultValue": {
+          "value": "false"
+        },
+        "description": "If true, the health function requires a valid Firebase Auth ID token and admin allowlist"
+      },
+      "admin_emails": {
+        "defaultValue": {
+          "value": "admin@example.com"
+        },
+        "description": "Comma-separated list of admin emails allowed to invoke when require_auth is true"
       }
     }
   }

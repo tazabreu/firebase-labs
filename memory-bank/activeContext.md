@@ -1,45 +1,16 @@
 # Active Context
 
-## Current Focus
-- Production deployment pipeline verification
-- Next.js + Shadcn + Tailwind frontend for health endpoint integration
-- CQRS implementation with Google PubSub and Terraform
-- Banking application frontend with Next.js
+## Current Focus (next 1–2 iterations)
+- Remote Config: add `health_env_label` to surface environment in responses; validate local vs nonprod via integration tests.
+- Auth Hardening for `health` HTTPS function:
+  - Evaluate Firebase Auth ID token verification + admin email allowlist (via Remote Config)
+  - Evaluate Firebase App Check for abuse protection from the open web
 
-## Recent Activities
-- Created GitHub workflows for nonprod and prod deployment
-- Implemented multi-environment testing support
-- Added Remote Config integration for feature flags
-- Successfully completed health service implementation
+## Near-Term Follow-ups
+- Gate enforcement behind new RC flag `require_auth` (default false), then enable in nonprod for validation.
+- Optional: thin admin UI/client to fetch ID token and invoke function.
 
-## Next Implementation Phases
-
-### 1. Production Deployment
-- Verify production pipeline execution
-- Document any friction points
-- Ensure smooth deployment process
-
-### 2. Frontend Integration
-- Create Next.js application using latest CLI version
-- Implement Shadcn components and Tailwind styling
-- Connect to health endpoint
-- Display feature flags and health status
-
-### 3. CQRS Implementation
-- Set up Google PubSub using Terraform
-- Implement Firestore event writing
-- Create PubSub streaming functions
-- Develop snapshot consolidation and transaction functions
-
-### 4. Banking Frontend
-- Build Next.js + Shadcn + Tailwind interface
-- Create banking transaction UI
-- Display consolidated data and transactions
-- Implement real-time updates
-
-## Technical Research Needed
-- Next.js CLI latest version usage
-- Shadcn component integration
-- Terraform + Firebase atomic deployment
-- Google PubSub best practices
-- CQRS pattern implementation
+## Dependencies
+- Firebase Admin SDK (verifyIdToken; optional App Check verification)
+- Remote Config template changes per project
+- Integration tests updates for RC and (later) auth behaviors
