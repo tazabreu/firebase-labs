@@ -10,14 +10,20 @@ import logger from '../utils/logger';
  */
 export interface FeatureFlags {
   health_sample_message: string;
-  [key: string]: string | boolean | number;
+  health_env_label: string;
+  require_auth: boolean;
+  admin_emails: string[];
+  [key: string]: string | boolean | number | string[];
 }
 
 /**
  * Default values for feature flags
  */
 const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
-  health_sample_message: 'Health service is operational'
+  health_sample_message: 'Health service is operational',
+  health_env_label: 'local',
+  require_auth: false,
+  admin_emails: []
 };
 
 /**
@@ -37,11 +43,40 @@ export async function getFeatureFlags(): Promise<FeatureFlags> {
     // Extract feature flags
     const featureFlags: FeatureFlags = { ...DEFAULT_FEATURE_FLAGS };
     
-    // Check if feature flags exist in the template
+    // health_sample_message
     if (template.parameters && template.parameters['health_sample_message']) {
       const param = template.parameters['health_sample_message'];
       if (param.defaultValue && typeof param.defaultValue === 'object' && 'value' in param.defaultValue) {
         featureFlags.health_sample_message = String(param.defaultValue.value);
+      }
+    }
+
+    // health_env_label
+    if (template.parameters && template.parameters['health_env_label']) {
+      const param = template.parameters['health_env_label'];
+      if (param.defaultValue && typeof param.defaultValue === 'object' && 'value' in param.defaultValue) {
+        featureFlags.health_env_label = String(param.defaultValue.value);
+      }
+    }
+
+    // require_auth (string "true"/"false" to boolean)
+    if (template.parameters && template.parameters['require_auth']) {
+      const param = template.parameters['require_auth'];
+      if (param.defaultValue && typeof param.defaultValue === 'object' && 'value' in param.defaultValue) {
+        const raw = String(param.defaultValue.value).toLowerCase();
+        featureFlags.require_auth = raw === 'true';
+      }
+    }
+
+    // admin_emails (comma-separated string -> string[])
+    if (template.parameters && template.parameters['admin_emails']) {
+      const param = template.parameters['admin_emails'];
+      if (param.defaultValue && typeof param.defaultValue === 'object' && 'value' in param.defaultValue) {
+        const raw = String(param.defaultValue.value);
+        featureFlags.admin_emails = raw
+          .split(',')
+          .map(v => v.trim())
+          .filter(v => v.length > 0);
       }
     }
     

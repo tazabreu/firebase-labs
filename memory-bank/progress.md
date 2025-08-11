@@ -100,3 +100,20 @@ All tasks completed successfully with code organized into modular, maintainable 
 - Explored CQRS implementation patterns with Google PubSub
 - Prepared technical research list for upcoming features
 - Updated memory bank with new focus areas
+
+## Infrastructure Planning (2025-05-03)
+
+- Explored Firebase configuration options for Storage and Firestore
+- Researched integration patterns between Terraform and Firebase
+- Identified potential challenges in atomic deployments
+- Created task list for infrastructure enhancement
+- Planned testing approach for deployed services
+
+## 2025-08-10
+- Scoped next iteration: add RC keys (`health_env_label`, `require_auth`) and plan auth hardening (ID token allowlist/App Check)
+- Pruned memory context to focus on RC and auth for `health` function
+
+## 2025-08-10 (cont.)
+- Implemented IAM perimeter: function invoker private; CI enforces bindings via gcloud post-deploy
+- Workflows deploy functions + remoteconfig; WIF auth configured placeholders
+- Integration tests accept optional Authorization header to call protected endpoints

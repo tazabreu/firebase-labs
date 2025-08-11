@@ -1,51 +1,15 @@
 # Implementation Tasks
 
-## ✅ Health Service Implementation
-- [x] Initialize Firebase Admin and Functions
-- [x] Create health service with downstream dependency checks
-- [x] Implement Cat Facts API integration
-- [x] Create structured logging
+## 🚀 Immediate Plan (Level 3)
+- [x] Remote Config: add `health_env_label` and `require_auth`
+  - [x] Update `remoteconfig.template.json`
+  - [x] Extend `remote-config.service.ts` types and mapping
+  - [x] Include new flags in health response
+  - [x] Local verify via emulator; deploy RC to nonprod (CI configured)
+- [x] Protect `health` function
+  - [x] Implement middleware: verify ID token when `require_auth` is true; allow only admin emails (RC)
+  - [x] Set IAM perimeter: private invoker; CI post-deploy remove public and add invokers
+  - [x] Update integration tests: optional Authorization header for protected envs
 
-## ✅ Integration Tests Setup
-- [x] Create integration tests directory structure
-- [x] Configure Jest for testing
-- [x] Implement basic health endpoint tests
-- [x] Add continuous monitoring capability
-
-## ✅ Multi-Environment Support
-- [x] Create environment-specific config files (local, nonprod)
-- [x] Update config module to load environment variables
-- [x] Add CLI-based environment selection in monitor
-- [x] Add environment-specific npm scripts
-
-## ✅ Feature Flags Integration
-- [x] Create Remote Config service
-- [x] Add feature flags to health check response
-- [x] Implement health_sample_message flag
-- [x] Verify feature flags in integration tests
-
-## 🚧 Production Deployment
-- [ ] Verify prod pipeline execution
-- [ ] Document and fix friction points
-- [ ] Ensure smooth deployment process
-
-## 🚧 Frontend Integration
-- [ ] Create Next.js application with latest CLI
-- [ ] Set up Shadcn UI components
-- [ ] Implement Tailwind styling
-- [ ] Connect to health endpoint
-- [ ] Display health status and feature flags
-
-## 🚧 CQRS Implementation
-- [ ] Set up Google PubSub with Terraform
-- [ ] Create Firestore event writing function
-- [ ] Implement PubSub topic and subscriptions
-- [ ] Develop snapshot consolidation function
-- [ ] Create transaction processing function
-
-## 🚧 Banking Frontend
-- [ ] Initialize Next.js application
-- [ ] Set up Shadcn UI components
-- [ ] Create banking transaction interface
-- [ ] Implement real-time data display
-- [ ] Connect to CQRS backend
+## ✅ Completed
+- Existing health service, RC integration (`health_sample_message`), and integration tests
