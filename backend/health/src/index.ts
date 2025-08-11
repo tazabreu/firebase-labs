@@ -11,6 +11,9 @@ import logger from './utils/logger';
 import { performHealthCheck, HealthStatus } from './services/health.service';
 import { getFeatureFlags } from './services/remote-config.service';
 
+interface AuthInfo { uid: string; email: string }
+interface AuthedRequest extends Request { auth?: AuthInfo }
+
 // Initialize Firebase Admin
 initializeApp({
   credential: applicationDefault()
@@ -25,7 +28,7 @@ logger.info('Health service initializing');
 const app = express();
 
 // Auth middleware (enabled when RC require_auth is true)
-async function authGuard(req: Request, res: Response, next: NextFunction): Promise<void> {
+async function authGuard(req: AuthedRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const flags = await getFeatureFlags();
 
@@ -51,7 +54,7 @@ async function authGuard(req: Request, res: Response, next: NextFunction): Promi
     }
 
     // Attach identity for logging
-    (req as any).auth = { uid: decoded.uid, email: requesterEmail };
+    req.auth = { uid: decoded.uid, email: requesterEmail };
 
     next();
   } catch (err) {
@@ -67,12 +70,12 @@ app.use('/', authGuard);
  * GET / - Health Endpoint
  * Returns health status of the service and its dependencies
  */
-app.get('/', async (req: Request, res: Response): Promise<void> => {
+app.get('/', async (req: AuthedRequest, res: Response): Promise<void> => {
   try {
     logger.info('Health check requested', {
       ip: req.ip,
       userAgent: req.get('user-agent'),
-      auth: (req as any).auth || undefined
+      auth: req.auth || undefined
     });
     
     // Perform comprehensive health check
