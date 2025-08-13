@@ -35,9 +35,28 @@ app.use((req: AuthedRequest, res: Response, next: NextFunction) => {
   const projectId = process.env.GCP_PROJECT || process.env.GCLOUD_PROJECT || process.env.FUNCTIONS_CLOUD_PROJECT;
   const cloudLoggingTrace = traceId && projectId ? `projects/${projectId}/traces/${traceId}` : undefined;
 
+  interface HttpRequestLogPayload {
+    msg: string;
+    method: string;
+    path: string;
+    status: number;
+    durationMs: number;
+    userAgent: string | undefined;
+    ip: string | undefined;
+    trace?: string;
+    httpRequest: {
+      requestMethod: string;
+      requestUrl: string;
+      status: number;
+      userAgent: string | undefined;
+      remoteIp: string | undefined;
+      latency: string;
+    };
+  }
+
   res.on('finish', () => {
     const durationMs = Date.now() - start;
-    const logPayload: Record<string, unknown> = {
+    const logPayload: HttpRequestLogPayload = {
       msg: 'HTTP request',
       method: req.method,
       path: req.originalUrl || req.url,
@@ -45,18 +64,15 @@ app.use((req: AuthedRequest, res: Response, next: NextFunction) => {
       durationMs,
       userAgent: req.get('user-agent'),
       ip: req.ip,
-    };
-    if (cloudLoggingTrace) {
-      (logPayload as any).trace = cloudLoggingTrace;
-    }
-    // Structured httpRequest object improves Cloud Logging parsing
-    (logPayload as any).httpRequest = {
-      requestMethod: req.method,
-      requestUrl: req.originalUrl || req.url,
-      status: res.statusCode,
-      userAgent: req.get('user-agent'),
-      remoteIp: req.ip,
-      latency: `${Math.max(0, durationMs)}ms`,
+      trace: cloudLoggingTrace,
+      httpRequest: {
+        requestMethod: req.method,
+        requestUrl: req.originalUrl || req.url,
+        status: res.statusCode,
+        userAgent: req.get('user-agent'),
+        remoteIp: req.ip,
+        latency: `${Math.max(0, durationMs)}ms`
+      }
     };
 
     // Choose log level by status code
