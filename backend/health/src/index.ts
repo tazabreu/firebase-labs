@@ -94,9 +94,9 @@ app.use((req: AuthedRequest, res: Response, next: NextFunction) => {
  * GET / - Health Endpoint
  * Returns health status of the service and its dependencies
  */
-app.get('/', async (req: AuthedRequest, res: Response): Promise<void> => {
+app.get('/', async (_req: AuthedRequest, res: Response): Promise<void> => {
   try {
-    logger.info({ event: 'health_check_start', auth: req.auth || undefined }, 'GET /health requested');
+    logger.info({ event: 'health_check_start' }, 'GET /health requested');
     
     // Perform comprehensive health check
     const [healthResult, flags] = await Promise.all([
