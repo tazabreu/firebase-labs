@@ -4,15 +4,13 @@
  */
 import express, { Request, Response, NextFunction } from 'express';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
 import { getRemoteConfig } from 'firebase-admin/remote-config';
 import { onRequest } from 'firebase-functions/v2/https';
 import logger from './utils/logger';
 import { performHealthCheck, HealthStatus } from './services/health.service';
 import { getFeatureFlags } from './services/remote-config.service';
 
-interface AuthInfo { uid: string; email: string }
-interface AuthedRequest extends Request { auth?: AuthInfo }
+interface AuthedRequest extends Request {}
 
 // Initialize Firebase Admin
 initializeApp({
@@ -74,44 +72,7 @@ app.use((req: AuthedRequest, res: Response, next: NextFunction) => {
   next();
 });
 
-// Auth middleware (enabled when RC require_auth is true)
-async function authGuard(req: AuthedRequest, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const flags = await getFeatureFlags();
-
-    if (!flags.require_auth) {
-      return next();
-    }
-
-    const authHeader = req.get('authorization') || req.get('Authorization');
-    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
-      res.status(401).json({ error: 'Missing or invalid Authorization header' });
-      return;
-    }
-
-    const token = authHeader.slice(7);
-    const decoded = await getAuth().verifyIdToken(token);
-
-    const requesterEmail = decoded.email || '';
-    const adminSet = new Set((flags.admin_emails || []).map(e => e.toLowerCase()));
-
-    if (!requesterEmail || !adminSet.has(requesterEmail.toLowerCase())) {
-      res.status(403).json({ error: 'Forbidden' });
-      return;
-    }
-
-    // Attach identity for logging
-    req.auth = { uid: decoded.uid, email: requesterEmail };
-
-    next();
-  } catch (err) {
-    logger.warn({ err }, 'Auth guard failed');
-    res.status(401).json({ error: 'Unauthorized' });
-  }
-}
-
-// Apply guard to health route
-app.use('/', authGuard);
+// No custom auth guard needed for health; Cloud Run/Functions v2 "invoker: private" handles protection at the edge
 
 /**
  * GET / - Health Endpoint
