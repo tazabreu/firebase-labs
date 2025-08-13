@@ -43,6 +43,14 @@ describe(`Health Endpoint Integration Tests (${currentEnv.toUpperCase()})`, () =
     expect(response.status).toBe(200);
   });
 
+  // Only for nonprod/prod: verify protection (unauthorized call is blocked at edge)
+  if (currentEnv === 'nonprod' || currentEnv === 'prod') {
+    test('should block unauthenticated requests (edge 401/403) without invoking function', async () => {
+      const bad = await fetch(config.baseUrl);
+      expect([401, 403]).toContain(bad.status);
+    });
+  }
+
   test('should return UP status and downstream verification in response body', async () => {
     // Act
     const response = await fetch(config.baseUrl, { headers: authHeaders() });

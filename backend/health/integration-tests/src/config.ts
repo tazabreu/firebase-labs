@@ -5,7 +5,7 @@ import * as dotenv from 'dotenv';
 import path from 'path';
 
 // Available environments
-export const availableEnvironments = ['local', 'nonprod'];
+export const availableEnvironments = ['local', 'nonprod', 'prod'];
 export const defaultEnvironment = 'local';
 
 /**
@@ -67,4 +67,4 @@ export function getConfig(): TestConfig {
  */
 export function getCurrentEnvironment(): string {
   return process.env.ENV || defaultEnvironment;
-} 
+}
