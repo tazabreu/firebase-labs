@@ -7,6 +7,14 @@ on:
         description: 'Type "DEPLOY" to confirm deployment'
         required: true
         default: ''
+      component:
+        description: 'What to deploy'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - remoteconfig
 
 jobs:
   deploy:
@@ -48,8 +56,19 @@ jobs:
       - name: Set up Firebase CLI
         run: npm install -g firebase-tools
       
+      - name: Select deployment scope
+        run: |
+          if [ "${{ github.event.inputs.component }}" = "remoteconfig" ]; then
+            echo "ONLY=remoteconfig" >> $GITHUB_ENV
+          else
+            echo "ONLY=functions,remoteconfig" >> $GITHUB_ENV
+          fi
+
+      - name: Use nonprod Remote Config template
+        run: cp remoteconfig.template.nonprod.json remoteconfig.template.json
+      
       - name: Deploy Functions and Remote Config to NonProd
-        run: firebase deploy --project fir-labs-nonprod --only functions,remoteconfig --force
+        run: firebase deploy --project fir-labs-nonprod --only $ONLY --force
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN_NONPROD }}
           NODE_ENV: nonprod
