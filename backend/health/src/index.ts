@@ -27,6 +27,53 @@ logger.info('Health service initializing');
 // Create Express app
 const app = express();
 
+// HTTP request logging middleware with trace correlation for Cloud Logging
+app.use((req: AuthedRequest, res: Response, next: NextFunction) => {
+  const start = Date.now();
+  // Cloud Run/Functions v2 provide trace header: x-cloud-trace-context
+  const traceHeader = req.get('x-cloud-trace-context') || '';
+  const traceId = traceHeader.split('/')?.[0] || undefined;
+  // Build Cloud Logging trace field if project id is available in env
+  const projectId = process.env.GCP_PROJECT || process.env.GCLOUD_PROJECT || process.env.FUNCTIONS_CLOUD_PROJECT;
+  const cloudLoggingTrace = traceId && projectId ? `projects/${projectId}/traces/${traceId}` : undefined;
+
+  res.on('finish', () => {
+    const durationMs = Date.now() - start;
+    const logPayload: Record<string, unknown> = {
+      msg: 'HTTP request',
+      method: req.method,
+      path: req.originalUrl || req.url,
+      status: res.statusCode,
+      durationMs,
+      userAgent: req.get('user-agent'),
+      ip: req.ip,
+    };
+    if (cloudLoggingTrace) {
+      (logPayload as any).trace = cloudLoggingTrace;
+    }
+    // Structured httpRequest object improves Cloud Logging parsing
+    (logPayload as any).httpRequest = {
+      requestMethod: req.method,
+      requestUrl: req.originalUrl || req.url,
+      status: res.statusCode,
+      userAgent: req.get('user-agent'),
+      remoteIp: req.ip,
+      latency: `${Math.max(0, durationMs)}ms`,
+    };
+
+    // Choose log level by status code
+    if (res.statusCode >= 500) {
+      logger.error(logPayload);
+    } else if (res.statusCode >= 400) {
+      logger.warn(logPayload);
+    } else {
+      logger.info(logPayload);
+    }
+  });
+
+  next();
+});
+
 // Auth middleware (enabled when RC require_auth is true)
 async function authGuard(req: AuthedRequest, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -72,11 +119,7 @@ app.use('/', authGuard);
  */
 app.get('/', async (req: AuthedRequest, res: Response): Promise<void> => {
   try {
-    logger.info('Health check requested', {
-      ip: req.ip,
-      userAgent: req.get('user-agent'),
-      auth: req.auth || undefined
-    });
+    logger.info({ event: 'health_check_start', auth: req.auth || undefined }, 'GET /health requested');
     
     // Perform comprehensive health check
     const [healthResult, flags] = await Promise.all([
@@ -95,6 +138,7 @@ app.get('/', async (req: AuthedRequest, res: Response): Promise<void> => {
       }
     };
     
+    logger.info({ event: 'health_check_complete', statusCode }, 'GET /health completed');
     res.status(statusCode).json(responseBody);
   } catch (err) {
     logger.error({ err }, 'Health check failed');
