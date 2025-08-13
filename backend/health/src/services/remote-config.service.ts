@@ -11,8 +11,6 @@ import logger from '../utils/logger';
 export interface FeatureFlags {
   health_sample_message: string;
   health_env_label: string;
-  require_auth: boolean;
-  admin_emails: string[];
   [key: string]: string | boolean | number | string[];
 }
 
@@ -21,9 +19,7 @@ export interface FeatureFlags {
  */
 const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   health_sample_message: 'Health service is operational',
-  health_env_label: 'local',
-  require_auth: false,
-  admin_emails: []
+  health_env_label: 'local'
 };
 
 /**
@@ -59,26 +55,7 @@ export async function getFeatureFlags(): Promise<FeatureFlags> {
       }
     }
 
-    // require_auth (string "true"/"false" to boolean)
-    if (template.parameters && template.parameters['require_auth']) {
-      const param = template.parameters['require_auth'];
-      if (param.defaultValue && typeof param.defaultValue === 'object' && 'value' in param.defaultValue) {
-        const raw = String(param.defaultValue.value).toLowerCase();
-        featureFlags.require_auth = raw === 'true';
-      }
-    }
-
-    // admin_emails (comma-separated string -> string[])
-    if (template.parameters && template.parameters['admin_emails']) {
-      const param = template.parameters['admin_emails'];
-      if (param.defaultValue && typeof param.defaultValue === 'object' && 'value' in param.defaultValue) {
-        const raw = String(param.defaultValue.value);
-        featureFlags.admin_emails = raw
-          .split(',')
-          .map(v => v.trim())
-          .filter(v => v.length > 0);
-      }
-    }
+    // No auth-related flags used for health endpoint
     
     const elapsed = Date.now() - startTime;
     logger.debug(`Feature flags fetched in ${elapsed}ms`);
