@@ -1,0 +1,12 @@
+{
+  "parameters": {
+    "health_sample_message": {
+      "defaultValue": { "value": "all-good-prod" },
+      "description": "Message returned by the health endpoint"
+    },
+    "health_env_label": {
+      "defaultValue": { "value": "prod" },
+      "description": "Label indicating the current environment (e.g., local, nonprod, prod)"
+    }
+  }
+}
