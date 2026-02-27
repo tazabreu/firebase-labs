@@ -26,15 +26,23 @@ This workflow deploys the application to the production Firebase environment.
 
 ## Setup Requirements
 
-Before using these workflows, you need to configure:
+Before using these workflows, configure the following GitHub repository secrets:
 
-1. GitHub repository secrets:
-   - `FIREBASE_SERVICE_ACCOUNT_NONPROD`: Service account key for nonprod environment
-   - `FIREBASE_SERVICE_ACCOUNT_PROD`: Service account key for prod environment
+| Secret | Purpose |
+|--------|---------|
+| `FIREBASE_TOKEN_NONPROD` | Firebase CI token for the nonprod project |
+| `FIREBASE_TOKEN_PROD` | Firebase CI token for the prod project |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER_NONPROD` | WIF provider resource name for nonprod (e.g. `projects/123/locations/global/workloadIdentityPools/my-pool/providers/my-provider`) |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER_PROD` | WIF provider resource name for prod |
+| `GCP_SERVICE_ACCOUNT_NONPROD` | Service account email impersonated by WIF for nonprod deployments |
+| `GCP_SERVICE_ACCOUNT_PROD` | Service account email impersonated by WIF for prod deployments |
+| `ADMIN_USER_EMAIL` | Google account email granted `roles/cloudfunctions.invoker` on the health function |
+| `INVOKER_SA_EMAIL_NONPROD` | Service account email granted invoker rights on the nonprod health function |
+| `INVOKER_SA_EMAIL_PROD` | Service account email granted invoker rights on the prod health function |
 
-2. Firebase project configuration:
-   - Ensure `.firebaserc` has the correct project aliases
-   - Verify Firebase configuration in `firebase.json`
+Also ensure:
+- `.firebaserc` has the correct project aliases (`fir-labs-nonprod` and `fir-labs-prod`)
+- `firebase.json` is configured with the services to deploy (functions, remoteconfig)
 
 ## Using the Workflows
 
@@ -45,30 +53,81 @@ Before using these workflows, you need to configure:
 5. Enter the confirmation text
 6. Click "Run workflow"
 
-## Obtaining Firebase Service Account Keys
+## Deployment Steps
 
-1. Go to Firebase Console > Project Settings > Service Accounts
-2. Click "Generate new private key"
-3. Save the JSON file
-4. In your GitHub repository, go to Settings > Secrets > Actions
-5. Add the content of the JSON file as a secret with the appropriate name # Firebase Service Account Setup
+Each workflow performs the following steps:
 
-To generate Firebase service account tokens and add them to GitHub:
+1. **Checkout** the repository
+2. **Install** Node.js, pnpm, root dependencies, and health function dependencies
+3. **Lint and build** the health function TypeScript source
+4. **Select deployment scope** (`all` deploys functions + remoteconfig; `remoteconfig` deploys only Remote Config)
+5. **Apply environment-specific Remote Config** template
+6. **Deploy** to Firebase using the Firebase CLI and a CI token
+7. **Authenticate** to Google Cloud using Workload Identity Federation
+8. **Enforce IAM invoker bindings** on the deployed Cloud Function (removes public access, grants invoker to admin user and service account)
 
-## Step 1: Generate Firebase CI tokens
+## Obtaining Firebase CI Tokens
 
 1. Install Firebase CLI locally: `npm install -g firebase-tools`
-2. Login to Firebase: `firebase login:ci`
-3. This will open a browser window - authenticate with your Google account
-4. After authentication, you'll receive a token in your terminal
-5. Save this token securely - you'll need it for GitHub
-6. Repeat for each Firebase project (nonprod and prod) if using different accounts
+2. Run `firebase login:ci`
+3. A browser window will open — authenticate with your Google account
+4. After authentication, a CI token is printed in the terminal
+5. Add the token as a GitHub secret (`FIREBASE_TOKEN_NONPROD` or `FIREBASE_TOKEN_PROD`)
+6. Repeat for each Firebase project if using separate accounts
 
-## Step 2: Add tokens to GitHub Secrets
+## Workload Identity Federation (WIF) Setup
 
-1. In your GitHub repository, go to Settings > Secrets and variables > Actions
-2. Click 'New repository secret'
-3. Create a secret named `FIREBASE_TOKEN_NONPROD` with the nonprod CI token
-4. Create another secret named `FIREBASE_TOKEN_PROD` with the production CI token
+WIF allows GitHub Actions to authenticate with Google Cloud without storing long-lived service account keys.
 
-These tokens will be used by the GitHub Actions workflows to authenticate with Firebase.
+### 1. Create a Workload Identity Pool
+
+```bash
+gcloud iam workload-identity-pools create "github-pool" \
+  --project="YOUR_PROJECT_ID" \
+  --location="global" \
+  --display-name="GitHub Actions Pool"
+```
+
+### 2. Create a Provider
+
+```bash
+gcloud iam workload-identity-pools providers create-oidc "github-provider" \
+  --project="YOUR_PROJECT_ID" \
+  --location="global" \
+  --workload-identity-pool="github-pool" \
+  --display-name="GitHub provider" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
+  --issuer-uri="https://token.actions.githubusercontent.com"
+```
+
+### 3. Bind the Provider to a Service Account
+
+```bash
+gcloud iam service-accounts add-iam-policy-binding "YOUR_SA@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --project="YOUR_PROJECT_ID" \
+  --role="roles/iam.workloadIdentityUser" \
+  --member="principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github-pool/attribute.repository/OWNER/REPO"
+```
+
+### 4. Add Secrets to GitHub
+
+- `GCP_WORKLOAD_IDENTITY_PROVIDER_NONPROD`: The full resource name of the WIF provider (e.g. `projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github-pool/providers/github-provider`)
+- `GCP_SERVICE_ACCOUNT_NONPROD`: The service account email (e.g. `my-sa@my-project.iam.gserviceaccount.com`)
+
+Repeat for the prod environment.
+
+## IAM Invoker Configuration
+
+After each deployment, the workflows enforce a strict IAM invoker policy on the `health` Cloud Function:
+
+1. **Remove public access** (`allUsers` invoker binding is removed if present)
+2. **Grant admin user** (`ADMIN_USER_EMAIL`) the `roles/cloudfunctions.invoker` role
+3. **Grant invoker service account** (`INVOKER_SA_EMAIL_*`) the `roles/cloudfunctions.invoker` role
+
+This ensures the health function is private and only accessible to authorized identities. When testing deployed functions, use a valid Google Cloud identity token:
+
+```bash
+ID_TOKEN="$(gcloud auth print-identity-token)"
+curl -H "Authorization: Bearer $ID_TOKEN" \
+  https://us-central1-fir-labs-nonprod.cloudfunctions.net/health
+```
